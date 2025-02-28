@@ -16,3 +16,16 @@ await import("@elizaos-plugins/plugin-tee")
         "pumpdotfun-sdk": "1.3.2",
         "tsup": "8.3.5",
         "undici": "6.21.1"
+
+
+### docker
+docker login
+docker build -t mrzqii/elizav1.0.3 .
+docker push mrzqii/elizav1.0.3
+
+
+### phala
+如果需要更新docker版本
+
+先点击shutdown
+再点击update 保存 就可以了

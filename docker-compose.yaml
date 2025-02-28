@@ -1,8 +1,6 @@
 services:
     eliza:
-        build:
-            context: .
-            dockerfile: Dockerfile
+        image: mrzqii/elizav1.0.2   
         stdin_open: true
         tty: true
         volumes:
@@ -10,7 +8,7 @@ services:
             - eliza:/app/packages/client-twitter/src/tweetcache
             - eliza:/app/agent/data
         environment:
-            - OPENAI_API_KEY=
+            - OPENAI_API_KEY=${OPENAI_API_KEY}
             - REDPILL_API_KEY=
             - ELEVENLABS_XI_API_KEY=
             - ELEVENLABS_MODEL_ID=eleven_multilingual_v2
@@ -31,7 +29,9 @@ services:
             - SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
             - HELIUS_API_KEY=
             - SERVER_PORT=3000
-            - WALLET_SECRET_SALT=secret_salt
+            - WALLET_SECRET_SALT=${WALLET_SECRET_SALT}
+            - TEE_MODE=PRODUCTION
+            - IS_IMPORT_LOCAL_CHARACTER=TRUE
             # Refer to: https://github.com/elizaOS/eliza/blob/develop/.env.example for all available environment variables
         ports:
             - "3000:3000"
