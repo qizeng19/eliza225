@@ -8,7 +8,7 @@ services:
         volumes:
             - /var/run/tappd.sock:/var/run/tappd.sock
             - eliza:/app/packages/client-twitter/src/tweetcache
-            - eliza:/app/db.sqlite
+            - eliza:/app/agent/data
         environment:
             - OPENAI_API_KEY=
             - REDPILL_API_KEY=

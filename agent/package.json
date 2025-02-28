@@ -18,10 +18,10 @@
         "exec": "node --enable-source-maps --loader ts-node/esm src/index.ts"
     },
     "dependencies": {
-        "@elizaos-plugins/plugin-tee": "workspace:*",
         "@elizaos/client-direct": "workspace:*",
         "@elizaos/core": "workspace:*",
         "@elizaos/plugin-bootstrap": "workspace:*",
+        "@elizaos-plugins/plugin-tee": "workspace:*",
         "readline": "1.3.0",
         "ws": "8.18.0",
         "yargs": "17.7.2"

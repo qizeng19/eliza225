@@ -363,12 +363,13 @@ export class DirectClient {
                         secrets: {
                             UNIQUE_ID: signature,
                             WALLET_SECRET_SALT: signature,
+                            TEE_MODE: "PRODUCTION",
                         },
                         voice: {
                             model: "",
                         },
                     },
-                    plugins: [],
+                    plugins: ["@elizaos/plugin-bootstrap", "@elizaos-plugins/plugin-tee"],
                     bio: bio,
                     lore: lore,
                     knowledge: [],
