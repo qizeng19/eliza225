@@ -388,7 +388,7 @@ export class DirectClient {
                 };
             try {
                 const runtime = await this.startAgent(character);
-                const walletKey = await getWalletKey(runtime.agentId, false, signature);
+                const walletKey = await getWalletKey(runtime, false);
                 
                 // 需要将character json保存到本地
                 // 保存到项目根目录agent/data/characters里面    
