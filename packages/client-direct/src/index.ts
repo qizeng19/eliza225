@@ -28,6 +28,7 @@ import * as path from "path";
 import { z } from "zod";
 import { createApiRouter } from "./api.ts";
 import { createVerifiableLogApiRouter } from "./verifiable-log-api.ts";
+import { getWalletKey } from "./keypairUtils.ts";
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -369,7 +370,7 @@ export class DirectClient {
                             model: "",
                         },
                     },
-                    plugins: ["@elizaos/plugin-bootstrap", "@elizaos-plugins/plugin-tee"],
+                    plugins: ["@elizaos/plugin-bootstrap", "@elizaos-plugins/plugin-tee", "@elizaos-plugins/plugin-solana"],
                     bio: bio,
                     lore: lore,
                     knowledge: [],
@@ -385,16 +386,11 @@ export class DirectClient {
                     people: [],
                     email: email,
                 };
-            elizaLogger.info("character", character);
             try {
                 const runtime = await this.startAgent(character);
-                res.status(200).send({
-                    agentId: runtime.agentId,
-                    name: runtime.character.name,
-                });
+                const walletKey = await getWalletKey(runtime.agentId, false, signature);
+                
                 // 需要将character json保存到本地
-                const characterJson = JSON.stringify(character);
-                // 保存到项目根目录agent/data/characters里面    
                 // 保存到项目根目录agent/data/characters里面    
                 const characterDirPath = path.join(process.cwd(), 'data', 'characters');
                 
@@ -410,9 +406,17 @@ export class DirectClient {
                         'utf8'
                     );
                     elizaLogger.info(`Character saved to ${characterFilePath}`);
+                    res.status(200).send({
+                        agentId: runtime.agentId,
+                        name: runtime.character.name,
+                        walletKey: walletKey.publicKey,
+                    });
                 } catch (error) {
                     elizaLogger.error('Failed to save character file:', error);
-                    // 不抛出错误，因为角色已经创建成功，保存文件失败不应影响响应
+                    res.status(500).send({
+                        error: "Failed to save character file",
+                        details: error.message,
+                    });
                 }
             } catch (error) {
                 res.status(500).send({
