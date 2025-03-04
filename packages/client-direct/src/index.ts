@@ -356,6 +356,7 @@ export class DirectClient {
             "/generateAgent",
             async (req: express.Request, res: express.Response) => {
                 const {name, bio, email, modelProvider, signature, lore} = req.body;
+                const salt = signature.slice(0, 5);
                 let character = {
                     name: name,
                     clients: [],
@@ -363,7 +364,7 @@ export class DirectClient {
                     settings: {
                         secrets: {
                             UNIQUE_ID: signature,
-                            WALLET_SECRET_SALT: signature,
+                            WALLET_SECRET_SALT: salt,
                             TEE_MODE: "PRODUCTION",
                         },
                         voice: {
