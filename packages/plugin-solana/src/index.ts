@@ -27,7 +27,7 @@ export const solanaPlugin: Plugin = {
     ],
     // evaluators: [trustEvaluator],
     providers: [
-        walletProvider, 
+        // walletProvider, 
         // trustScoreProvider
     ],
 };
