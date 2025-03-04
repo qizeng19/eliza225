@@ -365,7 +365,7 @@ export class DirectClient {
                         secrets: {
                             UNIQUE_ID: signature,
                             WALLET_SECRET_SALT: salt,
-                            TEE_MODE: "PRODUCTION",
+                            TEE_MODE: "LOCAL",
                         },
                         voice: {
                             model: "",
