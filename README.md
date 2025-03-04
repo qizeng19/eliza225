@@ -37,3 +37,10 @@ docker push mrzqii/elizav1.0.3
 如果需要更新docker版本
 先点击shutdown
 再点击update 保存 就可以了
+
+// 没有设置正确的tee 运行环境
+ERROR: Error deriving key:
+    errno: -2
+    code: "ENOENT"
+    syscall: "connect"
+    address: "/var/run/tappd.sock"
