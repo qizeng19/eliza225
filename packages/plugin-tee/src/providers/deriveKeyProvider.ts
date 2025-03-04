@@ -190,9 +190,10 @@ const deriveKeyProvider: Provider = {
         const provider = new DeriveKeyProvider(teeMode);
         const agentId = runtime.agentId;
         try {
-            elizaLogger.info("@@@runtime.character:", runtime.character);
+            elizaLogger.info("@@@runtime.character:", runtime.character.settings);
             // Validate wallet configuration
-            if (!runtime.getSetting("WALLET_SECRET_SALT")) {
+            const secretSalt = runtime.character.settings.secrets.WALLET_SECRET_SALT;
+            if (!secretSalt) {
                 elizaLogger.error(
                     "Wallet secret salt is not configured in settings"
                 );
@@ -200,8 +201,6 @@ const deriveKeyProvider: Provider = {
             }
 
             try {
-                const secretSalt =
-                    runtime.getSetting("WALLET_SECRET_SALT") || "secret_salt";
                 elizaLogger.info("@@@secretSalt:", secretSalt);
                 elizaLogger.info("@@@agentId:", agentId);
                 const solanaKeypair = await provider.deriveEd25519Keypair(
