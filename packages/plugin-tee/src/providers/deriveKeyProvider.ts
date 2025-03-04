@@ -190,6 +190,7 @@ const deriveKeyProvider: Provider = {
         const provider = new DeriveKeyProvider(teeMode);
         const agentId = runtime.agentId;
         try {
+            elizaLogger.info("@@@runtime.agentId:", runtime.agentId);
             // Validate wallet configuration
             if (!runtime.getSetting("WALLET_SECRET_SALT")) {
                 elizaLogger.error(
