@@ -32,6 +32,8 @@ docker login
 docker build -t mrzqii/elizav1.0.3 .
 docker push mrzqii/elizav1.0.3
 
+sudo docker ps
+
 
 ### phala
 如果需要更新docker版本
