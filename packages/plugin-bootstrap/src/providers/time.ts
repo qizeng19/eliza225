@@ -3,8 +3,6 @@ import { elizaLogger, type IAgentRuntime, type Memory, type Provider, type State
 const timeProvider: Provider = {
     get: async (_runtime: IAgentRuntime, _message: Memory, _state?: State) => {
         const currentDate = new Date();
-        const settings = _runtime.character.settings;
-        elizaLogger.info("@@@###settings:", settings);
         // Get UTC time since bots will be communicating with users around the global
         const options = {
             timeZone: "UTC",

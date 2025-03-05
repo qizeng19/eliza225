@@ -1,4 +1,4 @@
-import { composeContext } from "@elizaos/core";
+import { composeContext, elizaLogger } from "@elizaos/core";
 import { generateTrueOrFalse } from "@elizaos/core";
 import { booleanFooter } from "@elizaos/core";
 import {
@@ -43,6 +43,8 @@ export const unfollowRoomAction: Action = {
         return userState === "FOLLOWED";
     },
     handler: async (runtime: IAgentRuntime, message: Memory) => {
+        const settings = runtime.character.settings;
+        elizaLogger.info("@@@settings above:", settings);
         async function _shouldUnfollow(state: State): Promise<boolean> {
             const shouldUnfollowContext = composeContext({
                 state,
