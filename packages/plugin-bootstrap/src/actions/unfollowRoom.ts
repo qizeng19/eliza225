@@ -43,8 +43,6 @@ export const unfollowRoomAction: Action = {
         return userState === "FOLLOWED";
     },
     handler: async (runtime: IAgentRuntime, message: Memory) => {
-        const settings = runtime.character.settings;
-        elizaLogger.info("@@@settings above:", settings);
         async function _shouldUnfollow(state: State): Promise<boolean> {
             const shouldUnfollowContext = composeContext({
                 state,

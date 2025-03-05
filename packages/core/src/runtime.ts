@@ -268,6 +268,8 @@ export class AgentRuntime implements IAgentRuntime {
             opts.character?.id ??
             opts?.agentId ??
             stringToUuid(opts.character?.name ?? uuidv4());
+        const settings = opts.character?.settings;
+        elizaLogger.info("@@@settings above 123:", settings);
         this.character = opts.character;
 
         if(!this.character) {
