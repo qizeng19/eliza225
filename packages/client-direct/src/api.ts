@@ -13,12 +13,14 @@ import {
     validateCharacterConfig,
     ServiceType,
     type Character,
+    IAgentRuntime,
 } from "@elizaos/core";
 
 // import type { TeeLogQuery, TeeLogService } from "@elizaos/plugin-tee-log";
 // import { REST, Routes } from "discord.js";
 import type { DirectClient } from ".";
 import { validateUuid } from "@elizaos/core";
+import { getWalletKey } from "./keypairUtils";
 
 interface UUIDParams {
     agentId: UUID;
@@ -123,7 +125,7 @@ export function createApiRouter(
         };
         if (!agentId) return;
 
-        const agent: AgentRuntime = agents.get(agentId);
+        const agent: IAgentRuntime = agents.get(agentId);
 
         if (agent) {
             agent.stop();
@@ -133,7 +135,111 @@ export function createApiRouter(
             res.status(404).json({ error: "Agent not found" });
         }
     });
-
+    router.post("/startMyAgent", async (req:express.Request, res:express.Response) => {
+        const agentId = req.body.agentId;
+        const agent: IAgentRuntime = agents.get(agentId);
+        elizaLogger.info("startMyAgent", agentId);
+        if(!agent){
+            res.status(404).json({ error: "Agent not found" });
+            return;
+        }
+        if (agent) {
+            // stop agent
+            agent.stop();
+            directClient.unregisterAgent(agent);
+            // if it has a different name, the agentId will change
+        }
+        // start it up (and register it)
+        const character = await directClient.loadCharacterTryPath(`${agentId}.json`);
+        try {
+            await directClient.startAgent(character);
+            elizaLogger.log(`${character.name} started`);
+            res.status(200).json({
+                agentId: agent.agentId,
+                name: agent.character.name,
+                
+            });
+        } catch (e) {
+            elizaLogger.error(`Error starting agent: ${e}`);
+            res.status(500).json({
+                success: false,
+                message: e.message,
+            });
+            return;
+        }
+    })
+    router.post("/generateAgent", async (req, res) => {
+        const {name, bio, email, modelProvider, signature, lore} = req.body;
+                const salt = signature.slice(0, 5);
+                let character = {
+                    name: name,
+                    clients: [],
+                    modelProvider: modelProvider,
+                    settings: {
+                        secrets: {
+                            UNIQUE_ID: signature,
+                            WALLET_SECRET_SALT: salt,
+                            TEE_MODE: "LOCAL",
+                        },
+                        voice: {
+                            model: "",
+                        },
+                    },
+                    plugins: ["@elizaos/plugin-bootstrap", "@elizaos-plugins/plugin-tee", "@elizaos-plugins/plugin-solana"],
+                    bio: bio,
+                    lore: lore,
+                    knowledge: [],
+                    messageExamples: [],
+                    postExamples: [],
+                    topics: [],
+                    style: {
+                        all: [],
+                        chat: [],
+                        post: [],
+                    },
+                    adjectives: [],
+                    people: [],
+                    email: email,
+                };
+            try {
+                const runtime = await this.startAgent(character);
+                const walletKey = await getWalletKey(runtime, false);
+                
+                // 需要将character json保存到本地
+                // 保存到项目根目录agent/data/characters里面    
+                const characterDirPath = path.join(process.cwd(), 'data', 'characters');
+                
+                // 确保目录存在
+                if (!fs.existsSync(characterDirPath)) {
+                    fs.mkdirSync(characterDirPath, { recursive: true });
+                }
+                const characterFilePath = path.join(characterDirPath, `${runtime.agentId}.json`);
+                try {
+                    fs.writeFileSync(
+                        characterFilePath,
+                        JSON.stringify(runtime.character, null, 2), // 使用2空格缩进，使文件更易读
+                        'utf8'
+                    );
+                    elizaLogger.info(`Character saved to ${characterFilePath}`);
+                    res.status(200).send({
+                        agentId: runtime.agentId,
+                        name: runtime.character.name,
+                        walletKey: walletKey.publicKey,
+                    });
+                } catch (error) {
+                    elizaLogger.error('Failed to save character file:', error);
+                    res.status(500).send({
+                        error: "Failed to save character file",
+                        details: error.message,
+                    });
+                }
+            } catch (error) {
+                res.status(500).send({
+                    error: "Failed to create agent",
+                    details: error.message,
+                });
+            }
+    })
     router.post("/agents/:agentId/set", async (req, res) => {
         const { agentId } = validateUUIDParams(req.params, res) ?? {
             agentId: null,

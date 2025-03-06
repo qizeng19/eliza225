@@ -192,7 +192,8 @@ const deriveKeyProvider: Provider = {
         try {
             elizaLogger.info("@@@runtime.character:", runtime.character.settings);
             // Validate wallet configuration
-            const secretSalt = runtime.character.settings.secrets.WALLET_SECRET_SALT;
+            // const secretSalt = runtime.character.settings.secrets.WALLET_SECRET_SALT;
+            const secretSalt = runtime.getSetting("WALLET_SECRET_SALT");
             if (!secretSalt) {
                 elizaLogger.error(
                     "Wallet secret salt is not configured in settings"

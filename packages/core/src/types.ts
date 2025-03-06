@@ -1361,6 +1361,7 @@ export interface IAgentRuntime {
     ): Promise<State>;
 
     updateRecentMessageState(state: State): Promise<State>;
+    stop:any
 }
 
 export interface IImageDescriptionService extends Service {
