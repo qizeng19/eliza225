@@ -4,7 +4,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
-
+import { promises as fsPromises } from 'fs';
 import {
     type AgentRuntime,
     elizaLogger,
@@ -132,6 +132,59 @@ export function createApiRouter(
             directClient.unregisterAgent(agent);
             res.status(204).json({ success: true });
         } else {
+            res.status(404).json({ error: "Agent not found" });
+        }
+    });
+    router.get("/delete/:agentId", async (req, res) => {
+        const { agentId } = validateUUIDParams(req.params, res) ?? {
+            agentId: null,
+        };
+        elizaLogger.info("delete", agentId);
+        if (!agentId) return;
+
+        const agent: IAgentRuntime = agents.get(agentId);
+     
+        if (agent) {
+            try {
+                elizaLogger.info("stop", );
+                // 停止并注销 agent
+                agent.stop();
+                directClient.unregisterAgent(agent);
+        
+                const characterDirPath = path.join(process.cwd(), 'data', 'characters');
+                const characterFilePath = path.join(characterDirPath, `${agentId}.json`);
+                
+                // 检查目录是否存在
+                try {
+                    await fsPromises.access(characterDirPath);
+                } catch (error) {
+                    res.status(404).json({ error: "Character directory not found" });
+                    return;
+                }
+        
+                // 检查文件是否存在和权限
+                try {
+                    await fsPromises.access(characterFilePath, fs.constants.W_OK);
+                    
+                    // 删除文件
+                    await fsPromises.unlink(characterFilePath);
+                    console.log(`Successfully deleted character file: ${characterFilePath}`);
+                    res.status(200).json({ success: true });
+                } catch (error) {
+                    if (error.code === 'ENOENT') {
+                        res.status(404).json({ error: "Character file not found" });
+                    } else {
+                        console.error(`Error handling character file: ${error.message}`);
+                        throw new Error(`Failed to handle character file: ${error.message}`);
+                    }
+                    res.status(500).json({ error: "delete error" });
+                }
+            } catch (error) {
+                console.error('Error during agent cleanup:', error);
+                res.status(500).json({ error: "delete error1" });
+                throw error;
+            }
+        }else {
             res.status(404).json({ error: "Agent not found" });
         }
     });
