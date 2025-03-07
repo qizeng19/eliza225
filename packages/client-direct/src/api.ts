@@ -255,7 +255,7 @@ export function createApiRouter(
                     email: email,
                 };
             try {
-                const runtime = await this.startAgent(character);
+                const runtime = await directClient.startAgent(character);
                 const walletKey = await getWalletKey(runtime, false);
                 
                 // 需要将character json保存到本地
