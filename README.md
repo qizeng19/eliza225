@@ -1,5 +1,39 @@
 
-### tee-plugin动态导入报错 是因为缺包 解决方式：
+
+## docker
+### 本地tee模拟器启动Eliza 项目
+docker pull phalanetwork/tappd-simulator:latest
+
+# by default the simulator is available in localhost:8090
+docker run --rm -p 8090:8090 phalanetwork/tappd-simulator:latest 
+
+然后再运行pnpm start , 当然需要将 TEE_MODE 设置为LOCAL
+
+#### 推镜像到docker hub
+docker login // 需要自己去创建账户
+docker build -t mrzqii/elizav1.0.3 .  
+docker push mrzqii/elizav1.0.3
+
+sudo docker ps
+
+
+### phala
+如果需要更新docker版本
+先点击shutdown
+再点击update 保存 就可以了
+
+// 没有设置正确的tee 运行环境
+ERROR: Error deriving key:
+    errno: -2
+    code: "ENOENT"
+    syscall: "connect"
+    address: "/var/run/tappd.sock"
+
+### 安装依赖报错
+pnpm install --no-frozen-lockfile 这个方式来安装
+
+
+## tee-plugin动态导入报错 是因为缺包 解决方式：
 通过运行：
 cd agent目录
 node --experimental-vm-modules
@@ -20,29 +54,3 @@ await import("@elizaos-plugins/plugin-tee")
 "undici": "6.21.1"
 
 安装其他插件的时候也要注意这个问题， 另外注意包的名字是有变化的 需要手动调整
-
-### docker
-本地模拟器启动
-docker pull phalanetwork/tappd-simulator:latest
-# by default the simulator is available in localhost:8090
-docker run --rm -p 8090:8090 phalanetwork/tappd-simulator:latest
-
-推镜像到docker hub
-docker login
-docker build -t mrzqii/elizav1.0.3 .
-docker push mrzqii/elizav1.0.3
-
-sudo docker ps
-
-
-### phala
-如果需要更新docker版本
-先点击shutdown
-再点击update 保存 就可以了
-
-// 没有设置正确的tee 运行环境
-ERROR: Error deriving key:
-    errno: -2
-    code: "ENOENT"
-    syscall: "connect"
-    address: "/var/run/tappd.sock"
