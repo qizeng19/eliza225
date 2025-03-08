@@ -170,6 +170,10 @@ export async function loadCharacterFromOnchain(): Promise<Character[]> {
         const characterDirPath = path.join(process.cwd(), 'data', 'characters');
         
         try {
+            // 如果没有characters目录，则创建一个
+            if (!fs.existsSync(characterDirPath)) {
+                await fs.promises.mkdir(characterDirPath, { recursive: true });
+            }
             // 2. 读取目录中的所有文件名
             const fileNames = await fs.promises.readdir(characterDirPath);
             
