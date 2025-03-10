@@ -1,9 +1,13 @@
 import { generateImage, elizaLogger } from "@elizaos/core";
-import { Connection, Keypair, type PublicKey } from "@solana/web3.js";
+import { clusterApiUrl, Connection, Keypair, LAMPORTS_PER_SOL, type PublicKey } from "@solana/web3.js";
 import { VersionedTransaction } from "@solana/web3.js";
 import { Fomo, type PurchaseCurrency } from "fomo-sdk-solana";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { DEFAULT_DECIMALS, PumpFunSDK } from "pumpdotfun-sdk";
+import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
+import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import bs58 from "bs58";
+import { z } from "zod";
 import {
     settings,
     type ActionExample,
@@ -25,8 +29,8 @@ interface CreateTokenMetadata {
     name: string;
     symbol: string;
     uri: string;
-}
 
+}
 export interface CreateAndBuyContent extends Content {
     tokenMetadata: {
         name: string;
@@ -41,7 +45,7 @@ export interface CreateAndBuyContent extends Content {
 export function isCreateAndBuyContentForFomo(
     content: any
 ): content is CreateAndBuyContent {
-    elizaLogger.log("Content for create & buy", content);
+    elizaLogger.log("Content for create & buy", content.object);
     return (
         typeof content.tokenMetadata === "object" &&
         content.tokenMetadata !== null &&
@@ -54,8 +58,55 @@ export function isCreateAndBuyContentForFomo(
         typeof content.requiredLiquidity === "number"
     );
 }
+const createAndBuyToken = async (sdk, deployerKeypair, mint, tokenMetadata, buyAmountSol, callback) => {
+    const SLIPPAGE_BASIS_POINTS = 500n;
+    // const tokenMetadata = {
+    //     name: "TST-7",
+    //     symbol: "TST-7",
+    //     description: "TST-7: This is a test token",
+    //     filePath: "example/basic/random.png",
+    // };
 
-export const createAndBuyToken = async ({
+    const result = await sdk.createAndBuy(
+        deployerKeypair,
+        mint,
+        tokenMetadata,
+        BigInt(buyAmountSol * LAMPORTS_PER_SOL),
+        SLIPPAGE_BASIS_POINTS,
+        {
+            unitLimit: 250000,
+            unitPrice: 250000,
+        }
+    );
+
+    if (callback) {
+        if (result.success) {
+            callback({
+                text: `Token ${tokenMetadata.name} (${tokenMetadata.symbol}) created successfully!\nURL: https://fomo.fund/token/${result.ca}\nCreator: ${result.creator}\nView at: https://fomo.fund/token/${result.ca}`,
+                content: {
+                    tokenInfo: {
+                        symbol: tokenMetadata.symbol,
+                        address: result.ca,
+                        creator: result.creator,
+                        name: tokenMetadata.name,
+                        description: tokenMetadata.description,
+                        timestamp: Date.now(),
+                    },
+                },
+            });
+        } else {
+            callback({
+                text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
+                content: {
+                    error: result.error,
+                    mintAddress: result.ca,
+                },
+            });
+        }
+    }
+
+};
+export const createAndBuyToken2 = async ({
     deployer,
     mint,
     tokenMetadata,
@@ -75,14 +126,14 @@ export const createAndBuyToken = async ({
     requiredLiquidity: number;
     allowOffCurve: boolean;
     commitment?:
-        | "processed"
-        | "confirmed"
-        | "finalized"
-        | "recent"
-        | "single"
-        | "singleGossip"
-        | "root"
-        | "max";
+    | "processed"
+    | "confirmed"
+    | "finalized"
+    | "recent"
+    | "single"
+    | "singleGossip"
+    | "root"
+    | "max";
     fomo: Fomo;
     connection: Connection;
     slippage: string;
@@ -191,14 +242,14 @@ export const buyToken = async ({
     connection: Connection;
     currency: PurchaseCurrency;
     commitment?:
-        | "processed"
-        | "confirmed"
-        | "finalized"
-        | "recent"
-        | "single"
-        | "singleGossip"
-        | "root"
-        | "max";
+    | "processed"
+    | "confirmed"
+    | "finalized"
+    | "recent"
+    | "single"
+    | "singleGossip"
+    | "root"
+    | "max";
 }) => {
     const buyVersionedTx = await fomo.buyToken(
         buyer.publicKey,
@@ -290,14 +341,14 @@ export const sellToken = async ({
     connection: Connection;
     currency: PurchaseCurrency;
     commitment?:
-        | "processed"
-        | "confirmed"
-        | "finalized"
-        | "recent"
-        | "single"
-        | "singleGossip"
-        | "root"
-        | "max";
+    | "processed"
+    | "confirmed"
+    | "finalized"
+    | "recent"
+    | "single"
+    | "singleGossip"
+    | "root"
+    | "max";
 }) => {
     const sellVersionedTx = await fomo.sellToken(
         seller.publicKey,
@@ -431,13 +482,42 @@ export default {
             state,
             template: fomoTemplate,
         });
+        // 直接定义期望的对象结构
+        const schema = z.object({
+            tokenMetadata: z.object({
+                name: z.string().describe("代币名称"),
+                symbol: z.string()
+                    .min(1)
+                    .max(10)
+                    .describe("代币符号，通常是大写字母"),
+                description: z.string()
+                    .min(1)
+                    .describe("代币的简短描述"),
+                image_description: z.string()
+                    .min(1)
+                    .describe("用于生成代币图片的描述文本")
+            }).strict(), // 使用 strict() 确保没有额外的字段
+            buyAmountSol: z.number()
+                .min(0)
+                .max(1000)
+                .describe("SOL 数量，浮点数"),
+            requiredLiquidity: z.number()
+                .int()
+                .min(0)
+                .max(1000000)
+                .default(0)
+                .describe("所需流动性，整数，默认值为0")
+        }).strict(); // 顶层也使用 strict()
 
-        const content = await generateObject({
+        elizaLogger.info("##@Generated context pumpContext:",);
+        let content = await generateObject({
             runtime,
             context: pumpContext,
             modelClass: ModelClass.LARGE,
+            schema: schema
         });
-
+        content = content.object as any
+        elizaLogger.info("##@Generated content:", content);
         // Validate the generated content
         if (!isCreateAndBuyContentForFomo(content)) {
             elizaLogger.error(
@@ -480,7 +560,6 @@ export default {
             },
             runtime
         );
-
         const imageBuffer = Buffer.from(imageResult.data[0], "base64");
         const formData = new FormData();
         const blob = new Blob([imageBuffer], { type: "image/png" });
@@ -500,10 +579,11 @@ export default {
             metadataUri: string;
         };
         // Add the default decimals and convert file to Blob
-        const fullTokenMetadata: CreateTokenMetadata = {
+        const fullTokenMetadata = {
             name: tokenMetadata.name,
             symbol: tokenMetadata.symbol,
-            uri: metadataResponseJSON.metadataUri,
+            description: tokenMetadata.description,
+            filePath: metadataResponseJSON.metadataUri,
         };
 
         // Default priority fee for high network load
@@ -514,6 +594,7 @@ export default {
         const slippage = "2000";
         try {
             const { keypair: deployerKeypair } = await getWalletKey(runtime, true);
+            elizaLogger.info("@Deployer keypair:", deployerKeypair);
             // Get private key from settings and create deployer keypair
             // const privateKeyString =
             //     runtime.getSetting("SOLANA_PRIVATE_KEY") ??
@@ -524,68 +605,70 @@ export default {
             // Generate new mint keypair
             const mintKeypair = Keypair.generate() as any;
             elizaLogger.log(
-                `Generated mint address: ${mintKeypair.publicKey.toBase58()}`
+                `Generated mint address: ${JSON.stringify(mintKeypair)}`
             );
-
+            elizaLogger.log("1Executing create and buy transaction...", settings.SOLANA_RPC_URL);
             // Setup connection and SDK
-            const connection = new Connection(settings.SOLANA_RPC_URL!, {
-                commitment: "confirmed",
-                confirmTransactionInitialTimeout: 500000,
-                wsEndpoint: settings.SOLANA_RPC_URL!.replace("https", "wss"),
-            });
+            const connection = new Connection(process.env.SOLANA_RPC_URL || clusterApiUrl("devnet"));
 
-            const sdk = new Fomo(connection as any, "devnet");
-            // const sdk = new Fomo(connection as any, "devnet", deployerKeypair);
-            // const slippage = runtime.getSetting("SLIPPAGE");
-
-            const createAndBuyConfirmation = await promptConfirmation();
-            if (!createAndBuyConfirmation) {
-                elizaLogger.log("Create and buy token canceled by user");
-                return false;
+            // 查询当前账户的余额
+            const solbalance = await connection.getBalance(deployerKeypair.publicKey);
+            elizaLogger.info("1current");
+            const wallet = (deployerKeypair  );
+            elizaLogger.info("wallet current", wallet);
+            // const wallet = new NodeWallet(deployerKeypair as any);
+            const provider = new AnchorProvider(connection as any, new Wallet(wallet as any), AnchorProvider.defaultOptions());
+            elizaLogger.info("2current");
+            const sdk = new PumpFunSDK(provider);
+            elizaLogger.info("3current");
+            elizaLogger.info("1currentSolBalance", wallet.publicKey.toBase58());
+            const currentSolBalance = await connection.getBalance(wallet.publicKey);
+            elizaLogger.info("2currentSolBalance", wallet.publicKey.toBase58());
+            if (currentSolBalance === 0) {
+                console.log("Please send some SOL to the test-account:", wallet.publicKey.toBase58());
+                return;
             }
+            let bondingCurveAccount = await sdk.getBondingCurveAccount(mintKeypair.publicKey);
+            elizaLogger.info("11bondingCurveAccount", bondingCurveAccount);
+            if (!bondingCurveAccount) {
+                // const lamports = Math.floor(Number(buyAmountSol) * 1_000_000_000);
+                await createAndBuyToken(sdk, deployerKeypair, mintKeypair.publicKey, fullTokenMetadata, buyAmountSol, callback);
+                bondingCurveAccount = await sdk.getBondingCurveAccount(mintKeypair.publicKey);
+            }
+            elizaLogger.log("2Executing create and buy transaction...:::", deployerKeypair);
+
+            elizaLogger.log("33Executing create and buy transaction...");
 
             // Convert SOL to lamports (1 SOL = 1_000_000_000 lamports)
-            const lamports = Math.floor(Number(buyAmountSol) * 1_000_000_000);
+            // const lamports = Math.floor(Number(buyAmountSol) * 1_000_000_000);
 
-            elizaLogger.log("Executing create and buy transaction...");
-            const result = await createAndBuyToken({
-                deployer: deployerKeypair as any,
-                mint: mintKeypair as any,
-                tokenMetadata: fullTokenMetadata,
-                buyAmountSol: BigInt(lamports),
-                priorityFee: priorityFee.unitPrice,
-                requiredLiquidity: Number(requiredLiquidity),
-                allowOffCurve: false,
-                fomo: sdk,
-                connection,
-                slippage,
-            });
 
-            if (callback) {
-                if (result.success) {
-                    callback({
-                        text: `Token ${tokenMetadata.name} (${tokenMetadata.symbol}) created successfully!\nURL: https://fomo.fund/token/${result.ca}\nCreator: ${result.creator}\nView at: https://fomo.fund/token/${result.ca}`,
-                        content: {
-                            tokenInfo: {
-                                symbol: tokenMetadata.symbol,
-                                address: result.ca,
-                                creator: result.creator,
-                                name: tokenMetadata.name,
-                                description: tokenMetadata.description,
-                                timestamp: Date.now(),
-                            },
-                        },
-                    });
-                } else {
-                    callback({
-                        text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
-                        content: {
-                            error: result.error,
-                            mintAddress: result.ca,
-                        },
-                    });
-                }
-            }
+
+            // if (callback) {
+            //     if (result.success) {
+            //         callback({
+            //             text: `Token ${tokenMetadata.name} (${tokenMetadata.symbol}) created successfully!\nURL: https://fomo.fund/token/${result.ca}\nCreator: ${result.creator}\nView at: https://fomo.fund/token/${result.ca}`,
+            //             content: {
+            //                 tokenInfo: {
+            //                     symbol: tokenMetadata.symbol,
+            //                     address: result.ca,
+            //                     creator: result.creator,
+            //                     name: tokenMetadata.name,
+            //                     description: tokenMetadata.description,
+            //                     timestamp: Date.now(),
+            //                 },
+            //             },
+            //         });
+            //     } else {
+            //         callback({
+            //             text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
+            //             content: {
+            //                 error: result.error,
+            //                 mintAddress: result.ca,
+            //             },
+            //         });
+            //     }
+            // }
             //await trustScoreDb.addToken(tokenInfo);
             /*
                 // Update runtime state
@@ -597,8 +680,9 @@ export default {
             // Log success message with token view URL
             const successMessage = `Token created and purchased successfully! View at: https://fomo.fund/token/${mintKeypair.publicKey.toBase58()}`;
             elizaLogger.log(successMessage);
-            return result.success;
+            // return result.success;
         } catch (error) {
+            elizaLogger.info("@Error during token creation:", error.message);
             if (callback) {
                 callback({
                     text: `Error during token creation: ${error.message}`,
