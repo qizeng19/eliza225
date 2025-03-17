@@ -232,7 +232,7 @@ export function createApiRouter(
                         secrets: {
                             UNIQUE_ID: signature,
                             WALLET_SECRET_SALT: salt,
-                            TEE_MODE: "LOCAL",
+                            TEE_MODE: "PRODUCTION",
                         },
                         voice: {
                             model: "",
