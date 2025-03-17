@@ -81,7 +81,7 @@ const createAndBuyToken = async (sdk, deployerKeypair, mint, tokenMetadata, buyA
     if (callback) {
         if (result.success) {
             callback({
-                text: `Token ${tokenMetadata.name} (${tokenMetadata.symbol}) created successfully!\nURL: https://pump.fun/coin//${mint.publicKey.toBase58()}\n`,
+                text: `Token ${tokenMetadata.name} (${tokenMetadata.symbol}) created successfully!\nURL: https://pump.fun/coin/${mint.publicKey.toBase58()}\n`,
                 content: {
                     tokenInfo: {
                         symbol: tokenMetadata.symbol,
@@ -96,10 +96,10 @@ const createAndBuyToken = async (sdk, deployerKeypair, mint, tokenMetadata, buyA
             fetch("https://dapp.haive.club/api/token", {
                 method: "POST",
                 body: JSON.stringify({
-                  agentId: runtime.agentId,
-                //   agentId:"4e355329-acdc-0793-855e-d8898c822dbd",
-                  mintAddress: mint.publicKey.toBase58(),
-                //   mintAddress:"7wnJm4BFd4Pq51UmnZWSAJgoMmQnZazKUfJ8r6WLpump"
+                //   agentId: runtime.agentId,
+                  agentId:"4e355329-acdc-0793-855e-d8898c822dbd",
+                //   mintAddress: mint.publicKey.toBase58(),
+                  mintAddress:"AQiE2ghyFbBsbsfHiTEbKWcCLTDgyGzceKEPWftZpump"
                 }),
               })
                 .then((response) => response.json())
