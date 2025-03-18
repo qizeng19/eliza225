@@ -57,7 +57,7 @@ export function isCreateAndBuyContentForFomo(
         typeof content.requiredLiquidity === "number"
     );
 }
-const createAndBuyToken = async (sdk, deployerKeypair, mint, tokenMetadata, buyAmountSol, callback, runtime) => {
+const createAndBuyToken = async (sdk, deployerKeypair, mint, tokenMetadata, buyAmountSol, callback, runtime, currentSolBalance) => {
     const SLIPPAGE_BASIS_POINTS = 500n;
     // const tokenMetadata = {
     //     name: "TST-7",
@@ -111,10 +111,10 @@ const createAndBuyToken = async (sdk, deployerKeypair, mint, tokenMetadata, buyA
                 });
         } else {
             callback({
-                text: `Failed to create token: ${result.error}\nAttempted mint address: ${result.ca}`,
+                text: `Failed to create token: ${result.error}\nAttempted mint address: ${mint.publicKey.toBase58()}\nYour balance: ${currentSolBalance}\n`,
                 content: {
                     error: result.error,
-                    mintAddress: result.ca,
+                    mintAddress: mint.publicKey.toBase58(),
                 },
             });
             
@@ -641,7 +641,7 @@ export default {
             if (!bondingCurveAccount) {
                 // const lamports = Math.floor(Number(buyAmountSol) * 1_000_000_000);
                 elizaLogger.info("mintKeypair.publicKey", mintKeypair.publicKey.toBase58());
-                await createAndBuyToken(sdk, deployerKeypair, mintKeypair, fullTokenMetadata, buyAmountSol, callback, runtime);
+                await createAndBuyToken(sdk, deployerKeypair, mintKeypair, fullTokenMetadata, buyAmountSol, callback, runtime, currentSolBalance);
                 bondingCurveAccount = await sdk.getBondingCurveAccount(mintKeypair.publicKey);
             }
 

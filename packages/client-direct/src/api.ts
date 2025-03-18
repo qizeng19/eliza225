@@ -270,7 +270,10 @@ export function createApiRouter(
                 try {
                     fs.writeFileSync(
                         characterFilePath,
-                        JSON.stringify(character, null, 2), // 使用2空格缩进，使文件更易读
+                        JSON.stringify({
+                            ...character,
+                            plugins: ["@elizaos/plugin-bootstrap", "@elizaos-plugins/plugin-tee", "@elizaos-plugins/plugin-solana"]
+                        }, null, 2), // 使用2空格缩进，使文件更易读
                         'utf8'
                     );
                     elizaLogger.info(`Character saved to ${characterFilePath}`);
