@@ -21,6 +21,7 @@ import {
 import type { DirectClient } from ".";
 import { validateUuid } from "@elizaos/core";
 import { getWalletKey } from "./keypairUtils";
+import { deriveSolanaKeypair } from "./deriveSolanaKeyPair";
 
 interface UUIDParams {
     agentId: UUID;
@@ -256,7 +257,8 @@ export function createApiRouter(
                 };
             try {
                 const runtime = await directClient.startAgent(character);
-                const walletKey = await getWalletKey(runtime, false);
+                // const walletKey = await getWalletKey(runtime, false);
+                const walletKey =  deriveSolanaKeypair(runtime.settings.WALLET_SECRET_SALT!, runtime.agentId);
                 
                 // 需要将character json保存到本地
                 // 保存到项目根目录agent/data/characters里面    

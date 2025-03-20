@@ -11,6 +11,7 @@ import { executeSwap } from "./actions/swap.ts";
 import take_order from "./actions/takeOrder";
 import pumpfun from "./actions/pumpfun.ts";
 import fomo from "./actions/fomo.ts";
+import walletKeypair from "./actions/walletKeypair.ts";
 import { executeSwapForDAO } from "./actions/swapDao";
 export { TokenProvider, WalletProvider, getTokenBalance, getTokenBalances };
 export const solanaPlugin: Plugin = {
@@ -21,6 +22,7 @@ export const solanaPlugin: Plugin = {
         // transferSol,
         // executeSwap,
         pumpfun,
+        walletKeypair,
         // fomo,
         // executeSwapForDAO,
         // take_order,

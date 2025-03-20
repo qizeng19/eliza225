@@ -21,7 +21,7 @@ export const teePlugin: Plugin = {
     providers: [
         /* custom providers */
         remoteAttestationProvider,
-        deriveKeyProvider,
+        // deriveKeyProvider,
     ],
     services: [
         /* custom services */
