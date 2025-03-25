@@ -230,6 +230,7 @@ export function createApiRouter(
                     clients: [],
                     modelProvider: modelProvider,
                     settings: {
+                        WALLET_SECRET_SALT: salt,
                         secrets: {
                             UNIQUE_ID: signature,
                             WALLET_SECRET_SALT: salt,
@@ -257,8 +258,7 @@ export function createApiRouter(
                 };
             try {
                 const runtime = await directClient.startAgent(character);
-                // const walletKey = await getWalletKey(runtime, false);
-                const walletKey =  deriveSolanaKeypair(runtime.settings.WALLET_SECRET_SALT!, runtime.agentId);
+                const walletKey =  deriveSolanaKeypair(salt, runtime.agentId);
                 
                 // 需要将character json保存到本地
                 // 保存到项目根目录agent/data/characters里面    

@@ -14,41 +14,15 @@ import {
  
 import { deriveSolanaKeypair } from "../deriveSolanaKeyPair";
 
-
- 
-
-const transferTemplate = `Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
-
-Example response:
-\`\`\`json
-{
-    "requestType": "wallet_address",
-    "queryContext": null
-}
-\`\`\`
-
-{{recentMessages}}
-
-Extract the following information about the wallet address request:
-- Is the user asking about a wallet address, public key, or keypair? Set requestType to "wallet_address" if yes, null if no.
-- Any specific context about the request (e.g., "main wallet", "token wallet", etc). Set as queryContext.
-
-Common phrases that indicate a wallet address request:
-- "What's your wallet address?"
-- "Show me your public key"
-- "What's your Solana address?"
-- "Give me your wallet"
-`;
-
 export default {
-    name: "WALLET_KEYPAIR",
-    similes: [ "MY_WALLET", "MY_KEYPAIR", "MY_PUBLIC_KEY"],
+    name: "WALLET_ADDRESS",
+    similes: [ "WALLET", "KEYPAIR", "PUBLIC_KEY"],
     validate: async (runtime: IAgentRuntime, message: Memory) => {
         // Always return true for token transfers, letting the handler deal with specifics
         elizaLogger.log("Validating token transfer from user:", message.userId);
         return true;
     },
-    description: "return a keypair for the agent's wallet",
+    description: "when ask your wallet address or ask your publicKey ,return a publicKey for the agent's wallet",
     handler: async (
         runtime: IAgentRuntime,
         message: Memory,
@@ -67,8 +41,8 @@ export default {
                 );
                 return false;
             }
-            console.log("secretPath", secretPath);
-            const subject = "wallet_address";
+            const subject = runtime.agentId;
+            elizaLogger.info("params111::", secretPath, subject)
             const keypair = deriveSolanaKeypair(secretPath, subject);
             const publicKey = keypair.publicKey.toBase58();
              
@@ -83,7 +57,6 @@ export default {
                 });
             }
 
-            return true;
         } catch (error) {
             elizaLogger.error("Error during wallet keypair:", error);
             if (callback) {
@@ -92,7 +65,6 @@ export default {
                     content: { error: error.message },
                 });
             }
-            return false;
         }
     },
 
@@ -107,8 +79,8 @@ export default {
             {
                 user: "{{user2}}",
                 content: {
-                    text: "Your Solana wallet address is 9jW8FPr6BSSsemWPV22UUCzSqkVdTp6HTyPqeqyuBbCa",
-                    action: "WALLET_KEYPAIR",
+                    text: "Your Solana wallet address is ...",
+                    action: "WALLET_ADDRESS",
                 },
             },
             {
@@ -120,8 +92,8 @@ export default {
             {
                 user: "{{user2}}",
                 content: {
-                    text: "Your Solana wallet address is 9jW8FPr6BSSsemWPV22UUCzSqkVdTp6HTyPqeqyuBbCa",
-                    action: "WALLET_KEYPAIR",
+                    text: "Your Solana wallet address is ...",
+                    action: "WALLET_ADDRESS",
                 },
             },
         ],
